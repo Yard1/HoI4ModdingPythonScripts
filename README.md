@@ -4,7 +4,9 @@ HoI 4 Transfer Technology scripted effect generator by Yard1, originally for Equ
 Written in Python 2.7
 
 Transfer Technology scripted effect will grant all techs researched by PREV to ROOT
+
 Best used when ROOT is just spawned (eg. as a civil war TAG)
+
 It is not advised to use this for already existing nations, as mutually exclusive techs will be given regardless of what ROOT has already researched
 
 Copyright (c) 2017 Antoni Baum (Yard1)
@@ -22,14 +24,21 @@ Given an input technology file or folder, generate a Transfer Technology
 scripted effect.
 
 positional arguments:
+  
   input                 Technology file name/folder containing files
+  
   output                File name to write the scripted effect to
 
+
 optional arguments:
+  
   -h, --help            show this help message and exit
+  
   -en effectname, --effectname effectname
                         Name of the scripted effect
                         (default:"transfer_technology")
+  
   -a, --add             Will add new technologies to an already existing
                         transfer_technology effect (first set name with -en)
+  
   -o, --overwrite       Will overwrite the output file if it already exists
