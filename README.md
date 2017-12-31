@@ -10,6 +10,6 @@ Scripts included:
 - hoi4transfertechsegen.py - HoI 4 Transfer Technology scripted effect generator - generates a transfer_technology scripted effect, which grants all technologies researched by one country to another.
 - hoi4localisationadder.py - HoI 4 Localisation Adder - adds empty localisation entries from a given event, national_focus or idea file.
 - hoi4focusgfxentry.py - HoI 4 Focus GFX entry generator - adds GFX entries from national_focus files.
-- DHtoHoi4MinisterConverter.pt - HoI Darkest Hour minister to HoI4 idea converter - converts Hearts of Iron Darkest Hour minister files to Hearts of Iron IV ideas, following a format specified by HoI4 Darkest Hour mod by Algerian General.
+- DHtoHoi4MinisterConverter.pt - HoI Darkest Hour minister to HoI4 idea converter - converts Hearts of Iron Darkest Hour minister files to Hearts of Iron IV ideas, following a format specified by HoI4 Darkest Hour mod by Algerian General. Handles Unicode characters.
 
 MIT license (LICENSE) applies to every file in this repository.
