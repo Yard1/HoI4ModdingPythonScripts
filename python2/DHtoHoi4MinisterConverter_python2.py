@@ -74,7 +74,7 @@ class minister:
         return "%s, %s, %s, %s, %s, %s" % (self.position, self.name, self.start_year, self.end_year, self.ideology, self.trait)
     
     def convert(self, country_tag):
-        return unicode("\t# %s\n\t\t%s = {\n\t\t\tpicture = Generic_Portrait\n\t\t\tallowed = { tag = %s }\n\t\tavailable = {  date > %s date < %s }\n\t\t\tcost = 150\n\t\t\tremoval_cost = 10\n\t\t\ttraits = { %s %s }\n\t\t}" % (self.name, self.idea_tag, country_tag, "%s.1.1" % self.start_year, "%s.1.1" % self.end_year, positions[self.position]+"_"+re.sub(" ", "_", self.trait), "ideology_"+self.ideology))
+        return unicode("\t# %s\n\t\t%s = {\n\t\t\tpicture = Generic_Portrait\n\t\t\tallowed = { tag = %s }\n\t\t\tavailable = {  date > %s date < %s }\n\t\t\tcost = 150\n\t\t\tremoval_cost = 10\n\t\t\ttraits = { %s %s }\n\t\t}" % (self.name, self.idea_tag, country_tag, "%s.1.1" % self.start_year, "%s.1.1" % self.end_year, positions[self.position]+"_"+re.sub(" ", "_", self.trait), "ideology_"+self.ideology))
         
 def is_number(s):
     try:
