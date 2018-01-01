@@ -66,7 +66,8 @@ class minister:
         self.end_year = end_year
         self.ideology = ideology
         self.trait = string.capwords(trait)
-        self.idea_tag = "%s_%s_%s" % (country_tag, positions[self.position], re.sub(" ", "_", re.sub('[^A-Za-z0-9 ]+', '', unidecode(self.name))))
+        self.parsed_name = re.sub(" ", "_", re.sub('[^A-Za-z0-9 ]+', '', unidecode(self.name)))
+        self.idea_tag = "%s_%s_%s" % (country_tag, positions[self.position], self.parsed_name)
 
     def __repr__(self):
         return "<minister position:%s name:%s start_year:%s end_year:%s ideology:%s trait:%s>" % (self.position, self.name, self.start_year, self.end_year, self.ideology, self.trait)
@@ -75,7 +76,7 @@ class minister:
         return "%s, %s, %s, %s, %s, %s" % (self.position, self.name, self.start_year, self.end_year, self.ideology, self.trait)
     
     def convert(self, country_tag):
-        return unicode("\t# %s\n\t\t%s = {\n\t\t\tpicture = Generic_Portrait\n\t\t\tallowed = { tag = %s }\n\t\t\tavailable = {  date > %s date < %s %s }\n\t\t\tcost = 150\n\t\t\tremoval_cost = 10\n\t\t\ttraits = { %s %s }\n\t\t}" % (self.name, self.idea_tag, country_tag, "%s.1.1" % self.start_year, "%s.1.1" % self.end_year, "%s_Minister_Allowed" % self.ideology, positions[self.position]+"_"+re.sub(" ", "_", self.trait), "ideology_"+self.ideology))
+        return unicode("\t# %s\n\t\t%s = {\n\t\t\tpicture = Generic_Portrait\n\t\t\tallowed = { tag = %s }\n\t\t\tavailable = {\n\t\t\t\tdate > %s\n\t\t\t\tdate < %s\n\t\t\t\t%s = yes\n\t\t\t\tNOT = { has_country_flag = %s }\n\t\t\t}\n\t\t\tcost = 150\n\t\t\tremoval_cost = 10\n\t\t\ttraits = { %s %s }\n\t\t}" % (self.name, self.idea_tag, country_tag, "%s.1.1" % self.start_year, "%s.1.1" % self.end_year, "%s_Minister_Allowed" % self.ideology, "%s_unavailable" % self.parsed_name, positions[self.position]+"_"+re.sub(" ", "_", self.trait), "ideology_"+self.ideology))
         
 def is_number(s):
     try:
