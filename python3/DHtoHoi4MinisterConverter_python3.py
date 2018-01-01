@@ -3,6 +3,7 @@ import argparse
 import sys
 import re
 import codecs
+import string
 import collections
 try:
     from unidecode import unidecode
@@ -55,8 +56,8 @@ class minister:
         self.start_year = start_year
         self.end_year = end_year
         self.ideology = ideology
-        self.trait = trait
-        self.idea_tag = "%s_%s_%s" % (country_tag, positions[self.position], re.sub(" ", "_", unidecode(self.name)))
+        self.trait = string.capwords(trait)
+        self.idea_tag = "%s_%s_%s" % (country_tag, positions[self.position], re.sub(" ", "_", re.sub('[^A-Za-z0-9 ]+', '', unidecode(self.name))))
     
     def __repr__(self):
         return "<minister position:%s name:%s start_year:%s end_year:%s ideology:%s trait:%s>" % (self.position, self.name, self.start_year, self.end_year, self.ideology, self.trait)
