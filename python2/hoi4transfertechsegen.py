@@ -178,9 +178,9 @@ if args.add:
 print("Backuping " + args.output + "...")  
 try:
     os.remove(args.output + '.bak')
+    os.rename(args.output, args.output + '.bak')
 except OSError as os.errno.ENOENT:
     pass
-os.rename(args.output, args.output + '.bak')
 print("Writing to " + args.output + "...")      
 with open(args.output,"w+") as f:
     f.writelines(str(line) + "\n" for line in output_lines)
