@@ -3,7 +3,7 @@ Various useful Python scripts to automate some tedious parts of Hearts of Iron 4
 
 Readmes and usage instructions are included as comments in .py source files.
 
-Python 2.7 scripts may work on Python 3.\* but that is not guaranteed.
+Python 2.7 scripts may work on Python 3.\* but that is not guaranteed. Same goes for the other way around.
 
 Scripts included:
 
