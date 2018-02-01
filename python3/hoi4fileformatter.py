@@ -7,6 +7,7 @@ import sys
 #############################
 ###
 ### HoI 4 File Formatter by Yard1, originally for Equestria at War mod
+### Warning: this script overwrites files without creating backups! While it has been tested and should not cause any in-game errors, please keep that in mind.
 ### Written in Python 3.5.2
 ###
 ### Copyright (c) 2017 Antoni Baum (Yard1)
