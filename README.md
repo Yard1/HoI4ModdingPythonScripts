@@ -13,5 +13,6 @@ Scripts included:
 - DHtoHoi4MinisterConverter.pt - HoI Darkest Hour minister to HoI4 idea converter - converts Hearts of Iron Darkest Hour minister files to Hearts of Iron IV ideas, following a format specified by HoI4 Darkest Hour mod by Algerian General. Handles Unicode characters.
 - hoi4ideagfxentry.py - Idea GFX entry generator- generates idea GFX entries for all ideas in a given file.
 - hoi4fileformatter.py - Indents files for readability and consistency.
+- USAElectionGenerator.py - Generates events simulating first-past-the-post elections (US style) using a .csv spreadsheet.
 
 MIT license (LICENSE) applies to every file in this repository.
