@@ -3,6 +3,7 @@ import argparse
 import os
 import sys
 import re
+import collections
 
 #############################
 ###
@@ -14,7 +15,7 @@ import re
 ### The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 ### THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 ###
-### usage: hoi4localisationadder.py [-h] [-t] input output
+### usage: hoi4LocalisationAdderApp.py [-h] [-t] input output
 ### 
 ### Given an event, national_focus or ideas file, add missing localisation entries
 ### to a specified localisation file. Note: custom tooltips are not supported. In
@@ -37,7 +38,7 @@ def readfile(name):
     print("Reading file " + name + "...")
     with open(name, "r") as f:
         lines = f.read().splitlines()
-    tags = list()
+    tags = collections.OrderedDict()
 
     open_blocks = 0
     is_event_file = False
@@ -60,24 +61,24 @@ def readfile(name):
                 temp_line = re.sub('^.*id ?=', "", line)
                 temp_line = re.sub('\s', "", temp_line)
                 temp_line.strip()
-                tags.append(temp_line)
+                tags[temp_line] = None
         elif is_idea_file:
             if open_blocks == 2 and "{" in line:
                 temp_line = line
                 temp_line = re.sub('\s|=(\s|){', "", temp_line)
                 temp_line.strip()
-                tags.append(temp_line)
+                tags[temp_line] = None
         elif is_event_file:
             if open_blocks > 0 and open_blocks < 3 and re.match('^.*(title|desc|name|text) ?=', line):
                 temp_line = re.sub('^.*(title|desc|name|text) ?=', "", line)
                 temp_line = re.sub('\s', "", temp_line)
                 temp_line.strip()
-                tags.append(temp_line)
+                tags[temp_line] = None
         open_blocks += line.count('{')
         open_blocks -= line.count('}')
 
     print("File " + name + " read successfully!")
-    return tags, (is_event_file, is_focus_file, is_idea_file)
+    return list(tags.keys()), (is_event_file, is_focus_file, is_idea_file)
 ###################################################################
 parser = argparse.ArgumentParser(description='Given an event, national_focus or ideas file, add missing localisation entries to a specified localisation file. Note: custom tooltips are not supported. In case of events, title, description and option names will be added (triggered titles and descriptions are supported). For national_focus and ideas, names and descriptions will be added.')
 parser.add_argument('input', metavar='input',
