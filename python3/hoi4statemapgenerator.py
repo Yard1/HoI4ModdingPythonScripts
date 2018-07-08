@@ -32,12 +32,14 @@ except:
 ###                                 provinces definition states output
 ### 
 ### Given valid provinces.bmp, definition.csv files and a folder of state history
-### files, generate an image containing a map of states with their IDs.
+### files (or strategic region files), generate an image containing a map of
+### states with their IDs.
 ### 
 ### positional arguments:
 ###   provinces             Path to provinces.bmp file
 ###   definition            Path to definition.csv file
-###   states                Path to history/states folder
+###   states                Path to 'history/states' or 'map/strategicregions'
+###                         folder
 ###   output                Name of output file
 ### 
 ### optional arguments:
@@ -45,6 +47,7 @@ except:
 ###   -c COLORS, --colors COLORS
 ###                         Name of pregenerated colors.pickle file (Default:
 ###                         hoi4statemapgenerator_colors.pickle)
+###   -f FONT, --font FONT  Name of font to use (Default: ARIALN.TTF)
 ###   -nid, --no_ids        Do not put IDs on the map (Default: False)
 ###
 #############################
@@ -121,7 +124,7 @@ def create_states_map(colors_replacement_dict, provinces_image, water_color):
             else:
                 pixels[i, j] = water_color
 
-def create_states_map_with_id(colors_replacement_dict, provinces_image, water_color):
+def create_states_map_with_id(colors_replacement_dict, provinces_image, water_color, font_name):
     state_pixels = defaultdict(list)
     water_color = (water_color[0], water_color[1], water_color[2])
     pixels = provinces_image.load()
@@ -138,7 +141,11 @@ def create_states_map_with_id(colors_replacement_dict, provinces_image, water_co
     m = None
     (X, Y) = provinces_image.size
     draw = ImageDraw.Draw(provinces_image)
-    font = ImageFont.truetype("ARIALN.TTF", 10)
+    try:
+        font = ImageFont.truetype(font_name, 10)
+    except:
+        print("Font " + font_name + "not found, using system default. This probably won't look good.")
+        font = ImageFont.load_default()
     for state, pixels in state_pixels.items():
         m = np.zeros((X, Y))
         for pixel in pixels:
@@ -178,17 +185,19 @@ def get_colors(name):
 
 #############################
 
-parser = argparse.ArgumentParser(description='Given valid provinces.bmp, definition.csv files and a folder of state history files, generate an image containing a map of states with their IDs.')
+parser = argparse.ArgumentParser(description='Given valid provinces.bmp, definition.csv files and a folder of state history files (or strategic region files), generate an image containing a map of states with their IDs.')
 parser.add_argument('provinces',
                     help='Path to provinces.bmp file')
 parser.add_argument( 'definition',
                     help='Path to definition.csv file')
 parser.add_argument( 'states',
-                    help='Path to history/states folder')
+                    help='Path to \'history/states\' or \'map/strategicregions\' folder')
 parser.add_argument( 'output',
                     help='Name of output file')
 parser.add_argument('-c', '--colors', required=False, default="hoi4statemapgenerator_colors.pickle",
                     help='Name of pregenerated colors.pickle file (Default: hoi4statemapgenerator_colors.pickle)')
+parser.add_argument('-f', '--font', required=False, default="ARIALN.TTF",
+                    help='Name of font to use (Default: ARIALN.TTF)')
 parser.add_argument( '-nid', '--no_ids', action='store_true', required=False, default=False,
                     help='Do not put IDs on the map (Default: False)')
 
@@ -224,7 +233,7 @@ print("Generating map image - this may take a while...")
 if args.no_ids:
     create_states_map(colors_replacement_dict, province_map, [round(255 * x) for x in colors[0]])
 else:
-    create_states_map_with_id(colors_replacement_dict, province_map, [round(255 * x) for x in colors[0]])
+    create_states_map_with_id(colors_replacement_dict, province_map, [round(255 * x) for x in colors[0]], args.font)
 
 province_map.show()
 print("Saving file " + args.output + "...")
