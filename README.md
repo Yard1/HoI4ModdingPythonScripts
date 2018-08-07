@@ -14,5 +14,6 @@ Scripts included:
 - hoi4ideagfxentry.py - Idea GFX entry generator- generates idea GFX entries for all ideas in a given file.
 - hoi4fileformatter.py - Indents files for readability and consistency.
 - USAElectionGenerator.py - Generates events simulating first-past-the-post elections (US style) using a .csv spreadsheet.
+- hoi4statemapgenerator.py - Generates an image file of a map with every state/strategic region having a separate color and ID.  Examples: Vanilla: https://cdn.discordapp.com/attachments/463044308002406402/465588079579758602/out.png EaW: https://cdn.discordapp.com/attachments/463044308002406402/465591100237676554/out.png
 
 MIT license (LICENSE) applies to every file in this repository.
