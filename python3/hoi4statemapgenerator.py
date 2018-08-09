@@ -177,8 +177,11 @@ def get_colors(name):
         except:
             pass
         print("Saving file " + name + "...")
-        with open(name, "rb") as handle:
-            pickle.dump(colors, handle, protocol=pickle.HIGHEST_PROTOCOL)
+        try:
+            with open(name, "rb") as handle:
+                pickle.dump(colors, handle, protocol=pickle.HIGHEST_PROTOCOL)
+        except:
+            print("Could not save file " + name + "! Continuing...")
 
     colors.insert(0, [(1/255)*BLUE_RBG[0], (1/255)*BLUE_RBG[1], (1/255)*BLUE_RBG[2]])
     return colors
