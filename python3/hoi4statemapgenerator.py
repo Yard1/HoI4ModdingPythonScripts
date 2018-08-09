@@ -178,7 +178,7 @@ def get_colors(name):
             pass
         print("Saving file " + name + "...")
         try:
-            with open(name, "rb") as handle:
+            with open(name, "wb") as handle:
                 pickle.dump(colors, handle, protocol=pickle.HIGHEST_PROTOCOL)
         except:
             print("Could not save file " + name + "! Continuing...")
