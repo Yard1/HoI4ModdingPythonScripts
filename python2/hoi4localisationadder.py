@@ -127,8 +127,9 @@ if len(lines) < 1:
     print("Output file " + args.output + " is empty or doesn't exist, creating a new english localisation file.")
     output_lines.append("l_english:")
 for line in lines:
-    for i,parsed_line in enumerate(parsed_file[0]):
-        if parsed_line in line:
+    for i, parsed_line in enumerate(parsed_file[0]):
+        match = re.match(r"^([^#:]*):", line)
+        if match and match.group(1).strip() == parsed_line.strip():
             print(parsed_line + " already in output file, skipping")
             parsed_file[0].remove(parsed_file[0][i])
 if len(parsed_file[0]) > 0:
