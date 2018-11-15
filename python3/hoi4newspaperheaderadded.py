@@ -68,17 +68,17 @@ def read_event_file(name, loc_set):
         if open_blocks == 0 and "news_event" in line:
             is_in_news_event = True
         if is_in_news_event:
-            match = re.search(r'^\s*title\s*=\s*([^\{]+?)(\s|$)', line)
+            match = re.search(r'(^|\s)\s*title\s*=\s*([^\{]+?)(\s|$)', line)
             if match:
-                loc_set.add(match.group(1).strip())
+                loc_set.add(match.group(2).strip())
             else:
-                match = re.search(r'^\s*title\s*=\s*{', line)
+                match = re.search(r'(^|\s)\s*title\s*=\s*{', line)
                 if match:
                     is_in_title = True
             if is_in_title:
-                match = re.search(r'^\s*text\s*=\s*([^\{]+?)\s*($|\})', line)
+                match = re.search(r'(^|\s)\s*text\s*=\s*([^\{]+?)\s*($|\})', line)
                 if match:
-                    loc_set.add(match.group(1).strip())
+                    loc_set.add(match.group(2).strip())
         open_blocks += line.count('{')
         open_blocks -= line.count('}')
         if open_blocks == 1:
@@ -143,6 +143,9 @@ for file in glob.glob(os.path.join(events_path, '*.txt')):
 scripted_loc = args.scripted_loc.strip()
 scripted_loc_re_string = r'\s*?([^\s]*?:[0-9]+\s*)(\")(?!' + re.escape(scripted_loc) + r')'
 scripted_loc_re = re.compile(scripted_loc_re_string, re.IGNORECASE)
+
+for file in glob.glob(os.path.join(loc_path, '*.yml'), recursive=True):
+    read_loc_file(file, loc_set, scripted_loc_re, scripted_loc)
 
 try:
     dir = readable_dir(os.path.join(loc_path, "replace"))
