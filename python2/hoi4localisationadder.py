@@ -100,8 +100,8 @@ def readfile(name):
                 temp_line = re.sub('\s', "", temp_line)
                 temp_line.strip()
                 tags[temp_line] = None
-        open_blocks += line.count('{')
-        open_blocks -= line.count('}')
+        open_blocks += re.sub(r'\".*?\"', '', line).count('{')
+        open_blocks -= re.sub(r'\".*?\"', '', line).count('}')
 
     print("File " + name + " read successfully!")
     return list(tags.keys()), (is_event_file, is_focus_file, is_idea_file, is_decision_categories_file)
