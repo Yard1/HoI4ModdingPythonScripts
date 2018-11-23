@@ -7,6 +7,13 @@ from collections import defaultdict
 import random
 import pickle
 import traceback
+import itertools
+
+try:
+    import p_tqdm
+    from tqdm import tqdm
+except:
+    sys.exit("Requires p_tqdm pip package to be installed. Run:\npip install p_tqdm\nor\npip3.6 install p_tqdm\ndepending on your installation and start the script again.\nMore info on installing packages: https://docs.python.org/3/installing/index.html")
 
 try:
     from PIL import Image, ImageDraw, ImageFont
@@ -18,14 +25,12 @@ try:
 except:
     sys.exit("Requires numpy pip package to be installed. Run:\npip install numpy\nor\npip3.6 install numpy\ndepending on your installation and start the script again.\nMore info on installing packages: https://docs.python.org/3/installing/index.html")
 
-#try:
-import seaborn as sns
-import matplotlib.pyplot as plt
-import matplotlib.patches as mpatches
-
-#except:
-#    sys.exit("Requires seaborn pip package to be installed. Run:\npip install seaborn\nor\npip3.6 install seaborn\ndepending on your installation and start the script again.\nMore info on installing packages: https://docs.python.org/3/installing/index.html")
-
+try:
+    import seaborn as sns
+    import matplotlib.pyplot as plt
+    import matplotlib.patches as mpatches
+except:
+    sys.exit("Requires seaborn pip package to be installed. Run:\npip install seaborn\nor\npip3.6 install seaborn\ndepending on your installation and start the script again.\nMore info on installing packages: https://docs.python.org/3/installing/index.html")
 
 
 #############################
@@ -211,49 +216,59 @@ def count_colors(states_dict, provinces_rev, provinces_image):
 def create_states_map(colors_replacement_dict, provinces_image, water_color):
     water_color = (water_color[0], water_color[1], water_color[2])
     pixels = provinces_image.load()
-    for i in range(provinces_image.size[0]):
-        for j in range(provinces_image.size[1]):
-            if pixels[i, j] in colors_replacement_dict:
-                pixels[i, j] = colors_replacement_dict[pixels[i, j]][0]
-            else:
-                pixels[i, j] = water_color
+    print("Coloring pixels...")
+    for i, j in tqdm(itertools.product(range(provinces_image.size[0]), range(provinces_image.size[1])), total=provinces_image.size[0]*provinces_image.size[1]):
+        if pixels[i, j] in colors_replacement_dict:
+            pixels[i, j] = colors_replacement_dict[pixels[i, j]][0]
+        else:
+            pixels[i, j] = water_color
 
 def create_states_map_with_id(colors_replacement_dict, provinces_image, water_color, font_name):
     state_pixels = defaultdict(list)
     water_color = (water_color[0], water_color[1], water_color[2])
     pixels = provinces_image.load()
-    for i in range(provinces_image.size[0]):
-        for j in range(provinces_image.size[1]):
-            if pixels[i, j] in colors_replacement_dict:
-                res = colors_replacement_dict[pixels[i, j]]
-                pixels[i, j] = res[0]
-                state_pixels[res[1]].append((i, j))
-            else:
-                pixels[i, j] = water_color
+    print("Coloring pixels...")
+    for i, j in tqdm(itertools.product(range(provinces_image.size[0]), range(provinces_image.size[1])), total=provinces_image.size[0]*provinces_image.size[1]):
+        if pixels[i, j] in colors_replacement_dict:
+            res = colors_replacement_dict[pixels[i, j]]
+            pixels[i, j] = res[0]
+            state_pixels[res[1]].append((i, j))
+        else:
+            pixels[i, j] = water_color
     
-    # thanks to Martin Stancsics, https://stackoverflow.com/questions/37519238/python-find-center-of-object-in-an-image
-    m = None
-    (X, Y) = provinces_image.size
     draw = ImageDraw.Draw(provinces_image)
     try:
         font = ImageFont.truetype(font_name, 10)
     except:
         print("Font " + font_name + "not found, using system default. This probably won't look good.")
         font = ImageFont.load_default()
-    for state, pixels in state_pixels.items():
-        m = np.zeros((X, Y))
-        for pixel in pixels:
-            m[pixel] = 1
-        m = m / np.sum(np.sum(m))
+    size = provinces_image.size
+    for key, value in state_pixels.items():
+        state_pixels[key] = (value, font.getsize(str(key)))
+    print("Generating ID positions...")
+    positions = p_tqdm.p_map(find_id_position, list(state_pixels.items()), size)
+    for pos, state in positions:
+        draw.text(pos, str(state), fill="black", font=font)
 
-        dx = np.sum(m, 1)
-        dy = np.sum(m, 0)
+def find_id_position(kvp, size):
+    # thanks to Martin Stancsics, https://stackoverflow.com/questions/37519238/python-find-center-of-object-in-an-image
+    state = kvp[0]
+    pixels = kvp[1][0]
+    font_size = kvp[1][1]
+    m = None
+    (X, Y) = size
+    m = np.zeros((X, Y))
+    for pixel in pixels:
+        m[pixel] = 1
+    m = m / np.sum(np.sum(m))
 
-        cx = np.sum(dx * np.arange(X))
-        cy = np.sum(dy * np.arange(Y))
+    dx = np.sum(m, 1)
+    dy = np.sum(m, 0)
 
-        w, h = font.getsize(str(state))
-        draw.text((cx-w/2,cy-h/2), str(state), fill="black", font=font)
+    cx = np.sum(dx * np.arange(X))
+    cy = np.sum(dy * np.arange(Y))
+
+    return ((cx-font_size[0]/2,cy-font_size[1]/2), state)
 
 def get_colors(name):
     try:
@@ -264,7 +279,7 @@ def get_colors(name):
         print("No file " + name + "found, creating new colors...")
         colors = [[(1/255)*BLUE_RBG[0], (1/255)*BLUE_RBG[1], (1/255)*BLUE_RBG[2]]]
     if len(states_dict) > len(colors)-1:
-        for _ in range(len(states_dict)-((len(colors)-1))):
+        for _ in tqdm(range(len(states_dict)-((len(colors)-1)))):
             colors.append(generate_new_color(colors))
         try:
             colors.remove([[(1/255)*BLUE_RBG[0], (1/255)*BLUE_RBG[1], (1/255)*BLUE_RBG[2]]])
@@ -361,7 +376,7 @@ def generate_legend_and_colors(steps, data_list, title_str, mode, palette="Reds"
 
 parser = argparse.ArgumentParser(description='Given valid provinces.bmp, definition.csv files and a folder of state history files (or strategic region files), generate an image containing a map of states with their IDs.')
 parser.add_argument( 'mode',
-                    help='Mode: 1 - population per pixel, 2 - political, 3 - total factories, 4 - civ factories, 5 - mil factories, 6 - infra, 7 - nav factories')
+                    help='Mode: 0 - states, 1 - population per pixel, 2 - political, 3 - total factories, 4 - civ factories, 5 - mil factories, 6 - infra, 7 - nav factories')
 parser.add_argument('provinces',
                     help='Path to provinces.bmp file')
 parser.add_argument( 'definition',
@@ -385,8 +400,8 @@ water_color = [(1/255)*BLUE_RBG[0], (1/255)*BLUE_RBG[1], (1/255)*BLUE_RBG[2]]
 #load_pdx_colors_file("colors.txt")
 
 mode = int(args.mode)
-if mode < 1 or mode > 7:
-    sys.exit("Wrong mode - must be between 1 and 7")
+if mode < 0 or mode > 7:
+    sys.exit("Wrong mode - must be between 0 and 7")
 manpower_steps = 10
 factories_steps = 10
 
@@ -408,48 +423,57 @@ province_map = load_provinces(args.provinces)
 count_colors(states_dict, provinces_rev, province_map)
 
 if mode == 1:
+    print("Mode %d - Population per pixel" % mode)
     manpower_list = get_manpower_list(states_dict)
     lc = generate_legend_and_colors(manpower_steps, manpower_list, "Population per pixel/7.114km^2", mode)
     colors = lc[0]
     space = lc[1]
 elif mode == 2:
+    print("Mode %d - Political" % mode)
     colors = load_pdx_colors_file(args.colors)
 elif mode == 3:
+    print("Mode %d - Total Factories" % mode)
     factories_list = get_total_factories_list(states_dict)
     factories_steps = factories_list[-1]
     lc = generate_legend_and_colors(factories_steps, factories_list, "Total Factories in State", mode)
     colors = lc[0]
     space = lc[1]
 elif mode == 4:
+    print("Mode %d - Civilian Factories" % mode)
     factories_list = get_civ_factories_list(states_dict)
     factories_steps = factories_list[-1]
     lc = generate_legend_and_colors(factories_steps, factories_list, "Civilian Factories in State", mode, "Oranges")
     colors = lc[0]
     space = lc[1]
 elif mode == 5:
+    print("Mode %d - Military Factories" % mode)
     factories_list = get_mil_factories_list(states_dict)
     factories_steps = factories_list[-1]
     lc = generate_legend_and_colors(factories_steps, factories_list, "Military Factories in State", mode, "Greens")
     colors = lc[0]
     space = lc[1]
 elif mode == 6:
+    print("Mode %d - Infrastructure" % mode)
     factories_list = get_infra_list(states_dict)
     factories_steps = factories_list[-1]
     lc = generate_legend_and_colors(factories_steps, factories_list, "Infrastructure in State", mode, "Oranges")
     colors = lc[0]
     space = lc[1]
 elif mode == 7:
+    print("Mode %d - Dockyards" % mode)
     factories_list = get_dockyards_list(states_dict)
     factories_steps = factories_list[-1]
     lc = generate_legend_and_colors(factories_steps, factories_list, "Dockyards in State", mode, "Blues")
     colors = lc[0]
     space = lc[1]
 else:
+    print("Mode %d - States" % mode)
     colors = get_colors(args.colors)
 
 colors_replacement_dict = {}
 
-for state_id, state in states_dict.items():
+print("Determining state colors...")
+for state_id, state in tqdm(states_dict.items()):
     if mode == 1:
         color = get_state_color(state.manpower/state.pixels, space, colors)
     elif mode == 2:
@@ -471,7 +495,7 @@ for state_id, state in states_dict.items():
     for province in state.provinces:
         colors_replacement_dict[provinces[province]] = ((color[0], color[1], color[2]), state_id)
 
-print("Generating map image - this may take a while...")
+print("Generating map image...")
 if args.no_ids:
     create_states_map(colors_replacement_dict, province_map, [round(255 * x) for x in water_color])
 else:
