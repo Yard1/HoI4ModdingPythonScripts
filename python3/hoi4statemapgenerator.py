@@ -37,27 +37,30 @@ except:
 ###
 ### HoI 4 State IDs Map Generator by Yard1, originally for Equestria at War mod
 ### Written in Python 3.6
-### Requires pillow and numpy pip packages to be installed. More info on installing packages: https://docs.python.org/3/installing/index.html
+### Requires p_tqdm, pillow and numpy pip packages to be installed. More info on installing packages: https://docs.python.org/3/installing/index.html
 ###
 ### Copyright (c) 2018 Antoni Baum (Yard1)
 ### Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 ### The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 ### THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 ###
-### usage: hoi4statemapgenerator.py [-h] [-c COLORS] [-nid]
-###                                 provinces definition states output
-### 
+### usage: hoi4statemapgenerator.py [-h] [-c COLORS] [-f FONT] [-nid]
+###                                 mode provinces definition states output
+###
 ### Given valid provinces.bmp, definition.csv files and a folder of state history
 ### files (or strategic region files), generate an image containing a map of
 ### states with their IDs.
-### 
+###
 ### positional arguments:
+###   mode                  Mode: 0 - states, 1 - population per pixel, 2 -
+###                         political, 3 - total factories, 4 - civ factories, 5 -
+###                         mil factories, 6 - infra, 7 - nav factories
 ###   provinces             Path to provinces.bmp file
 ###   definition            Path to definition.csv file
 ###   states                Path to 'history/states' or 'map/strategicregions'
 ###                         folder
 ###   output                Name of output file
-### 
+###
 ### optional arguments:
 ###   -h, --help            show this help message and exit
 ###   -c COLORS, --colors COLORS
@@ -69,6 +72,7 @@ except:
 #############################
 
 BLUE_RBG = (68, 107, 163)
+MANPOWER_STEPS = 10
 
 def readable_dir(prospective_dir):
   if not os.path.isdir(prospective_dir):
@@ -402,8 +406,6 @@ water_color = [(1/255)*BLUE_RBG[0], (1/255)*BLUE_RBG[1], (1/255)*BLUE_RBG[2]]
 mode = int(args.mode)
 if mode < 0 or mode > 7:
     sys.exit("Wrong mode - must be between 0 and 7")
-manpower_steps = 10
-factories_steps = 10
 
 try:
     dir = readable_dir(args.states)
@@ -425,7 +427,7 @@ count_colors(states_dict, provinces_rev, province_map)
 if mode == 1:
     print("Mode %d - Population per pixel" % mode)
     manpower_list = get_manpower_list(states_dict)
-    lc = generate_legend_and_colors(manpower_steps, manpower_list, "Population per pixel/7.114km^2", mode)
+    lc = generate_legend_and_colors(MANPOWER_STEPS, manpower_list, "Population per pixel/7.114km^2", mode)
     colors = lc[0]
     space = lc[1]
 elif mode == 2:
