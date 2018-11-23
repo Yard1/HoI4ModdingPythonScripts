@@ -138,8 +138,13 @@ def load_definition(name):
 
 def load_state_file(name, states_dict):
     print("Reading file " + name + "...")
-    with open(name, "r") as f:
-        file_str = f.read()
+    file_str = None
+    try:
+        with open(name, "r") as f:
+            file_str = f.read()
+    except:
+        with open(name, "r", encoding='cp1252') as f:
+            file_str = f.read()
     if not file_str:
         return
     try:
@@ -276,13 +281,15 @@ def get_colors(name):
 
 def get_sequential_colors(space, palette="Reds"):
     palette = sns.color_palette(palette, space)
+    print(palette)
     for idx, item in enumerate(palette):
         palette[idx] = [int(round(255 * x)) for x in item]
+    print(palette)
     return palette
 
 def get_state_color(value, space, colors):
     for idx in range(0, len(colors)-1):
-        if space[idx] <= value <= space[idx+1]:
+        if space[idx] <= value < space[idx+1]:
             return colors[idx]
     return colors[0]
 
@@ -328,8 +335,8 @@ def generate_legend_and_colors(steps, data_list, title_str, mode, palette="Reds"
         space = np.quantile(data_list, steps)
         colors = get_sequential_colors(len(space), palette)
     else:
-        space = np.linspace(0, data_list[-1], num=steps, dtype=int)
-        print(space)
+        space = np.linspace(0, data_list[-1], num=data_list[-1]+1, dtype=int)
+        steps = data_list[-1]+1
         colors = get_sequential_colors(steps, palette)
     if mode == 1:
         space[0] = 0
@@ -355,6 +362,8 @@ def generate_legend_and_colors(steps, data_list, title_str, mode, palette="Reds"
 #############################
 
 parser = argparse.ArgumentParser(description='Given valid provinces.bmp, definition.csv files and a folder of state history files (or strategic region files), generate an image containing a map of states with their IDs.')
+parser.add_argument( 'mode',
+                    help='Mode: 1 - population per pixel, 2 - political, 3 - total factories, 4 - civ factories, 5 - mil factories, 6 - infra, 7 - nav factories')
 parser.add_argument('provinces',
                     help='Path to provinces.bmp file')
 parser.add_argument( 'definition',
@@ -375,9 +384,11 @@ water_color = [(1/255)*BLUE_RBG[0], (1/255)*BLUE_RBG[1], (1/255)*BLUE_RBG[2]]
 
 #print(sns.color_palette("Blues"))
 
-load_pdx_colors_file("colors.txt")
+#load_pdx_colors_file("colors.txt")
 
-mode = 6
+mode = int(args.mode)
+if mode < 1 or mode > 7:
+    sys.exit("Wrong mode - must be between 1 and 7")
 manpower_steps = 10
 factories_steps = 10
 
@@ -407,31 +418,31 @@ elif mode == 2:
     colors = load_pdx_colors_file(args.colors)
 elif mode == 3:
     factories_list = get_total_factories_list(states_dict)
-    factories_steps = factories_list[-1]+1
+    factories_steps = factories_list[-1]
     lc = generate_legend_and_colors(factories_steps, factories_list, "Total Factories in State", mode)
     colors = lc[0]
     space = lc[1]
 elif mode == 4:
     factories_list = get_civ_factories_list(states_dict)
-    factories_steps = factories_list[-1]+1
+    factories_steps = factories_list[-1]
     lc = generate_legend_and_colors(factories_steps, factories_list, "Civilian Factories in State", mode, "Oranges")
     colors = lc[0]
     space = lc[1]
 elif mode == 5:
     factories_list = get_mil_factories_list(states_dict)
-    factories_steps = factories_list[-1]+1
+    factories_steps = factories_list[-1]
     lc = generate_legend_and_colors(factories_steps, factories_list, "Military Factories in State", mode, "Greens")
     colors = lc[0]
     space = lc[1]
 elif mode == 6:
     factories_list = get_infra_list(states_dict)
-    factories_steps = factories_list[-1]+1
+    factories_steps = factories_list[-1]
     lc = generate_legend_and_colors(factories_steps, factories_list, "Infrastructure in State", mode, "Oranges")
     colors = lc[0]
     space = lc[1]
 elif mode == 7:
-    factories_list = get_infra_list(states_dict)
-    factories_steps = factories_list[-1]+1
+    factories_list = get_dockyards_list(states_dict)
+    factories_steps = factories_list[-1]
     lc = generate_legend_and_colors(factories_steps, factories_list, "Dockyards in State", mode, "Blues")
     colors = lc[0]
     space = lc[1]
