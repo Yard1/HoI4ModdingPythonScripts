@@ -138,14 +138,14 @@ def load_definition(name):
 
 def load_state_file(name, states_dict):
     print("Reading file " + name + "...")
-    file_str = None
+    file_str = ""
     try:
         with open(name, "r") as f:
             file_str = f.read()
     except:
         with open(name, "r", encoding='cp1252') as f:
             file_str = f.read()
-    if not file_str:
+    if not file_str.strip():
         return
     try:
         state_id = int(re.search(r"id\s*=\s*([0-9]+)", file_str, re.IGNORECASE).group(1))
@@ -281,17 +281,15 @@ def get_colors(name):
 
 def get_sequential_colors(space, palette="Reds"):
     palette = sns.color_palette(palette, space)
-    print(palette)
     for idx, item in enumerate(palette):
         palette[idx] = [int(round(255 * x)) for x in item]
-    print(palette)
     return palette
 
 def get_state_color(value, space, colors):
     for idx in range(0, len(colors)-1):
         if space[idx] <= value < space[idx+1]:
             return colors[idx]
-    return colors[0]
+    return colors[len(colors)-1]
 
 def get_manpower_list(states_dict):
     manpower_list = []
