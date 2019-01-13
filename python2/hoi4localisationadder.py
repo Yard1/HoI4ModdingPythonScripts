@@ -38,8 +38,19 @@ import collections
 #############################
 def readfile(name):
     print("Reading file " + name + "...")
-    with open(name, "r") as f:
-        lines = f.read().splitlines()
+    try:
+        with open(name, "r") as f:
+            lines = f.read().splitlines()
+    except:
+        try:
+            with open(name, "r", encoding='utf-8') as f:
+                lines = f.read().splitlines()
+        except:
+            try:
+                with open(name, "r", encoding='utf-8-sig') as f:
+                    lines = f.read().splitlines()
+            except:
+                print("Could not read file " + name + "!")
     tags = collections.OrderedDict()
 
     open_blocks = 0
@@ -100,8 +111,8 @@ def readfile(name):
                 temp_line = re.sub('\s', "", temp_line)
                 temp_line.strip()
                 tags[temp_line] = None
-        open_blocks += re.sub(r'\".*?\"', '', line).count('{')
-        open_blocks -= re.sub(r'\".*?\"', '', line).count('}')
+        open_blocks += line.count('{')
+        open_blocks -= line.count('}')
 
     print("File " + name + " read successfully!")
     return list(tags.keys()), (is_event_file, is_focus_file, is_idea_file, is_decision_categories_file)
@@ -120,8 +131,19 @@ parsed_file = readfile(args.input)
 #if not parsed_file[1][0] and not parsed_file[1][1] and not parsed_file[1][2:]:
 #    sys.exit("File " + args.input + " is not a valid event, national_focus or ideas file.")
 lines = list()
-with open(args.output,"r") as f:
-    lines = f.read().splitlines()
+try:
+    with open(args.output, "r") as f:
+        lines = f.read().splitlines()
+except:
+    try:
+        with open(args.output, "r", encoding='utf-8') as f:
+            lines = f.read().splitlines()
+    except:
+        try:
+            with open(args.output, "r", encoding='utf-8-sig') as f:
+                lines = f.read().splitlines()
+        except:
+            print("Could not read file " + args.output + "!")
 output_lines = list()
 if len(lines) < 1:
     print("Output file " + args.output + " is empty or doesn't exist, creating a new english localisation file.")
