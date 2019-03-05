@@ -8,6 +8,7 @@ import random
 import pickle
 import traceback
 import itertools
+import colorsys
 
 try:
     import p_tqdm
@@ -135,8 +136,19 @@ def load_provinces(name):
 
 def load_definition(name):
     print("Reading file " + name + "...")
-    with open(name, "r") as f:
-        lines = f.read().splitlines()
+    try:
+        with open(name, "r") as f:
+            lines = f.read().splitlines()
+    except:
+        try:
+            with open(name, "r", encoding='utf-8') as f:
+                lines = f.read().splitlines()
+        except:
+            try:
+                with open(name, "r", encoding='utf-8-sig') as f:
+                    lines = f.read().splitlines()
+            except:
+                print("Could not read file " + name + "!")
     provinces = {}
     provinces_rev = {}
     for line in lines:
@@ -152,8 +164,15 @@ def load_state_file(name, states_dict):
         with open(name, "r") as f:
             file_str = f.read()
     except:
-        with open(name, "r", encoding='cp1252') as f:
-            file_str = f.read()
+        try:
+            with open(name, "r", encoding='utf-8') as f:
+                file_str = f.read()
+        except:
+            try:
+                with open(name, "r", encoding='utf-8-sig') as f:
+                    file_str = f.read()
+            except:
+                print("Could not read file " + name + "!")
     if not file_str.strip():
         return
     try:
@@ -163,8 +182,14 @@ def load_state_file(name, states_dict):
         try:
             owner = re.search(r"(?:owner\s*=\s*)(\"?[a-zA-Z]{3}\"?)", file_str, re.IGNORECASE).group(1)
         except:
-            owner = re.search(r"(?:controller\s*=\s*)(\"?[a-zA-Z]{3}\"?)", file_str, re.IGNORECASE).group(1)
-        category = re.search(r"(?:category\s*=\s*)(\"?[a-zA-Z_]+\"?)", file_str, re.IGNORECASE).group(1)
+            try:
+                owner = re.search(r"(?:controller\s*=\s*)(\"?[a-zA-Z]{3}\"?)", file_str, re.IGNORECASE).group(1)
+            except:
+                owner = "---"
+        try:
+            category = re.search(r"(?:category\s*=\s*)(\"?[a-zA-Z_]+\"?)", file_str, re.IGNORECASE).group(1)
+        except:
+            category = "wasteland"
         industrial_complex = re.search(r"(?:industrial_complex\s*=\s*)([0-9]+)", file_str, re.IGNORECASE)
         if industrial_complex:
             industrial_complex = int(industrial_complex.group(1))
@@ -193,15 +218,28 @@ def load_state_file(name, states_dict):
 
 def load_pdx_colors_file(name):
     print("Reading file " + name + "...")
-    with open(name, "r") as f:
-        file_str = f.read()
+    try:
+        with open(name, "r") as f:
+            file_str = f.read()
+    except:
+        try:
+            with open(name, "r", encoding='utf-8') as f:
+                file_str = f.read()
+        except:
+            try:
+                with open(name, "r", encoding='utf-8-sig') as f:
+                    file_str = f.read()
+            except:
+                print("Could not read file " + name + "!")
+    file_str = re.sub(r"#.*$", "", file_str, re.MULTILINE)
     pdx_colors = re.findall(r"([A-Z]{3})\s*=\s*{\s*color\s*=\s*rgb\s*{([\s0-9]*)\s*}", file_str, re.IGNORECASE)
     pdx_colors_hsv = re.findall(r"([A-Z]{3})\s*=\s*{\s*color\s*=\s*hsv\s*{([\s0-9\.]*)\s*}", file_str, re.IGNORECASE)
     colors = {}
     for color in pdx_colors:
         colors[color[0]] = [int(x) for x in color[1].split()]
     for color in pdx_colors_hsv:
-        colors[color[0]] = [round(255 * float(x)) for x in color[1].split()]
+        hsv = color[1].split()
+        colors[color[0]] = [round(255 * float(x)) for x in colorsys.hsv_to_rgb(float(hsv[0]), float(hsv[1]), float(hsv[2]))]
     return colors
 
 def count_colors(states_dict, provinces_rev, provinces_image):
@@ -274,7 +312,7 @@ def find_id_position(kvp, size):
 
     return ((cx-font_size[0]/2,cy-font_size[1]/2), state)
 
-def get_colors(name):
+def get_colors(name, states_dict):
     try:
         print("Reading file " + name + "...")
         with open(name, "rb") as handle:
@@ -346,24 +384,77 @@ def get_dockyards_list(states_dict):
         dockyards_list.append(state.dockyard)
     return sorted(dockyards_list)
 
+def get_industry_per_capita(states_dict):
+    ipc_states = set()
+    for state_id, state in states_dict.items():
+        ipc_states.add(round(state.industrial_complex+state.arms_factory+state.dockyard/state.manpower, 2))
+
+    return sorted(list(ipc_states))
+
+def get_industry_per_capita_per_tag(states_dict):
+    ipc_dict = dict()
+    ipc_states_dict = dict()
+    for state_id, state in states_dict.items():
+        if not state.owner in ipc_dict:
+            ipc_dict[state.owner] = [state.industrial_complex+state.arms_factory+state.dockyard, state.manpower]
+        else:
+            ipc_dict[state.owner][0] = ipc_dict[state.owner][0] + state.industrial_complex+state.arms_factory+state.dockyard
+            ipc_dict[state.owner][1] = ipc_dict[state.owner][1] + state.manpower
+    
+    for owner, values in ipc_dict.items():
+        #ipc_dict[owner] = ipc_dict[owner][0]
+        ipc_dict[owner] = ipc_dict[owner][0]/(ipc_dict[owner][1])
+        ipc_dict[owner] = float("{:.1f}".format(ipc_dict[owner]))
+
+    print(ipc_dict)
+
+    for state_id, state in states_dict.items():
+        ipc_states_dict[state_id] = ipc_dict[state.owner]
+
+    return (ipc_states_dict, sorted(list({x for x in ipc_dict.values()})))
+    
+def get_manpower_per_factory_per_tag(states_dict):
+    ipc_dict = dict()
+    ipc_states_dict = dict()
+    for state_id, state in states_dict.items():
+        if not state.owner in ipc_dict:
+            ipc_dict[state.owner] = [state.industrial_complex+state.arms_factory+state.dockyard, state.manpower]
+        else:
+            ipc_dict[state.owner][0] = ipc_dict[state.owner][0] + state.industrial_complex+state.arms_factory+state.dockyard
+            ipc_dict[state.owner][1] = ipc_dict[state.owner][1] + state.manpower
+    
+    for owner, values in ipc_dict.items():
+        ipc_dict[owner] = ipc_dict[owner][1]/(ipc_dict[owner][0])
+        #ipc_dict[owner] = float("{:.2f}".format(ipc_dict[owner]))
+
+    print(ipc_dict)
+
+    for state_id, state in states_dict.items():
+        ipc_states_dict[state_id] = ipc_dict[state.owner]
+
+    return (ipc_states_dict, sorted(list({x for x in ipc_dict.values()})))
+
 def generate_legend_and_colors(steps, data_list, title_str, mode, palette="Reds"):
-    if mode == 1:
+    if mode == 1 or mode > 8:
         steps = np.linspace(0, 1, num=steps)
         space = np.quantile(data_list, steps)
+        colors = get_sequential_colors(len(space), palette)
+    elif mode == 8:
+        space = data_list
         colors = get_sequential_colors(len(space), palette)
     else:
         space = np.linspace(0, data_list[-1], num=data_list[-1]+1, dtype=int)
         steps = data_list[-1]+1
         colors = get_sequential_colors(steps, palette)
-    if mode == 1:
+    if mode == 1 or mode > 7:
         space[0] = 0
     labels = []
-    if mode == 1:
+    if mode == 1 or mode > 8:
         for idx, label in enumerate(space):
             if idx < len(space)-1:
-                labels.append("%d - %d" % (int(label), int(space[idx+1])))
+                labels.append("%.2f - %.2f" % (label, space[idx+1]))
             else:
-                labels.append("%d+" % (int(label)))
+                labels.append("%.2f+" % (label))
         le = len(space)-1
     else:
         labels = space
@@ -373,136 +464,169 @@ def generate_legend_and_colors(steps, data_list, title_str, mode, palette="Reds"
         mpatches.Patch(color=color, label=label)
         for label, color in zip(labels, sns.color_palette(palette, le))]
     fig.legend(patches, labels, loc='center', title=title_str, frameon=False)
-    fig.savefig('legend_%s' % args.output, bbox_inches='tight')
+    name = args.output.split(".", 2)
+    fig.savefig('%s_legend.%s' % (name[0], name[1]), bbox_inches='tight')
     return (colors, space)
 
 #############################
 
-parser = argparse.ArgumentParser(description='Given valid provinces.bmp, definition.csv files and a folder of state history files (or strategic region files), generate an image containing a map of states with their IDs.')
-parser.add_argument( 'mode',
-                    help='Mode: 0 - states, 1 - population per pixel, 2 - political, 3 - total factories, 4 - civ factories, 5 - mil factories, 6 - infra, 7 - nav factories')
-parser.add_argument('provinces',
-                    help='Path to provinces.bmp file')
-parser.add_argument( 'definition',
-                    help='Path to definition.csv file')
-parser.add_argument( 'states',
-                    help='Path to \'history/states\' or \'map/strategicregions\' folder')
-parser.add_argument( 'output',
-                    help='Name of output file')
-parser.add_argument('-c', '--colors', required=False, default="hoi4statemapgenerator_colors.pickle",
-                    help='Name of pregenerated colors.pickle file (Default: hoi4statemapgenerator_colors.pickle)')
-parser.add_argument('-f', '--font', required=False, default="ARIALN.TTF",
-                    help='Name of font to use (Default: ARIALN.TTF)')
-parser.add_argument( '-nid', '--no_ids', action='store_true', required=False, default=False,
-                    help='Do not put IDs on the map (Default: False)')
+def main():
+    water_color = [(1/255)*BLUE_RBG[0], (1/255)*BLUE_RBG[1], (1/255)*BLUE_RBG[2]]
 
-args = parser.parse_args()
-water_color = [(1/255)*BLUE_RBG[0], (1/255)*BLUE_RBG[1], (1/255)*BLUE_RBG[2]]
+    #print(sns.color_palette("Blues"))
 
-#print(sns.color_palette("Blues"))
+    #load_pdx_colors_file("colors.txt")
 
-#load_pdx_colors_file("colors.txt")
+    mode = int(args.mode)
+    if mode < 0 or mode > 10:
+        sys.exit("Wrong mode - must be between 0 and 9")
 
-mode = int(args.mode)
-if mode < 0 or mode > 7:
-    sys.exit("Wrong mode - must be between 0 and 7")
+    try:
+        dir = readable_dir(args.states)
+    except:
+        sys.exit("states is not a vaild folder.")
 
-try:
-    dir = readable_dir(args.states)
-except:
-    sys.exit("states is not a vaild folder.")
+    states_path = args.states
+    states_dict = {}
+    for file in os.listdir(states_path):
+        if file.endswith(".txt"):
+            load_state_file(os.path.join(states_path, file), states_dict)
 
-states_path = args.states
-states_dict = {}
-for file in os.listdir(states_path):
-    if file.endswith(".txt"):
-        load_state_file(os.path.join(states_path, file), states_dict)
+    provinces = load_definition(args.definition)
+    provinces_rev = provinces[1]
+    provinces = provinces[0]
+    province_map = load_provinces(args.provinces)
+    count_colors(states_dict, provinces_rev, province_map)
 
-provinces = load_definition(args.definition)
-provinces_rev = provinces[1]
-provinces = provinces[0]
-province_map = load_provinces(args.provinces)
-count_colors(states_dict, provinces_rev, province_map)
-
-if mode == 1:
-    print("Mode %d - Population per pixel" % mode)
-    manpower_list = get_manpower_list(states_dict)
-    lc = generate_legend_and_colors(MANPOWER_STEPS, manpower_list, "Population per pixel/7.114km^2", mode)
-    colors = lc[0]
-    space = lc[1]
-elif mode == 2:
-    print("Mode %d - Political" % mode)
-    colors = load_pdx_colors_file(args.colors)
-elif mode == 3:
-    print("Mode %d - Total Factories" % mode)
-    factories_list = get_total_factories_list(states_dict)
-    factories_steps = factories_list[-1]
-    lc = generate_legend_and_colors(factories_steps, factories_list, "Total Factories in State", mode)
-    colors = lc[0]
-    space = lc[1]
-elif mode == 4:
-    print("Mode %d - Civilian Factories" % mode)
-    factories_list = get_civ_factories_list(states_dict)
-    factories_steps = factories_list[-1]
-    lc = generate_legend_and_colors(factories_steps, factories_list, "Civilian Factories in State", mode, "Oranges")
-    colors = lc[0]
-    space = lc[1]
-elif mode == 5:
-    print("Mode %d - Military Factories" % mode)
-    factories_list = get_mil_factories_list(states_dict)
-    factories_steps = factories_list[-1]
-    lc = generate_legend_and_colors(factories_steps, factories_list, "Military Factories in State", mode, "Greens")
-    colors = lc[0]
-    space = lc[1]
-elif mode == 6:
-    print("Mode %d - Infrastructure" % mode)
-    factories_list = get_infra_list(states_dict)
-    factories_steps = factories_list[-1]
-    lc = generate_legend_and_colors(factories_steps, factories_list, "Infrastructure in State", mode, "Oranges")
-    colors = lc[0]
-    space = lc[1]
-elif mode == 7:
-    print("Mode %d - Dockyards" % mode)
-    factories_list = get_dockyards_list(states_dict)
-    factories_steps = factories_list[-1]
-    lc = generate_legend_and_colors(factories_steps, factories_list, "Dockyards in State", mode, "Blues")
-    colors = lc[0]
-    space = lc[1]
-else:
-    print("Mode %d - States" % mode)
-    colors = get_colors(args.colors)
-
-colors_replacement_dict = {}
-
-print("Determining state colors...")
-for state_id, state in tqdm(states_dict.items()):
     if mode == 1:
-        color = get_state_color(state.manpower/state.pixels, space, colors)
+        print("Mode %d - Population per pixel" % mode)
+        manpower_list = get_manpower_list(states_dict)
+        lc = generate_legend_and_colors(MANPOWER_STEPS, manpower_list, "Population per pixel/7.114km^2", mode)
+        colors = lc[0]
+        space = lc[1]
     elif mode == 2:
-        color = colors[state.owner]
+        print("Mode %d - Political" % mode)
+        colors = load_pdx_colors_file(args.colors)
     elif mode == 3:
-        color = get_state_color(state.industrial_complex+state.arms_factory+state.dockyard, space, colors)
+        print("Mode %d - Total Factories" % mode)
+        factories_list = get_total_factories_list(states_dict)
+        factories_steps = factories_list[-1]
+        lc = generate_legend_and_colors(factories_steps, factories_list, "Total Factories in State", mode)
+        colors = lc[0]
+        space = lc[1]
     elif mode == 4:
-        color = get_state_color(state.industrial_complex, space, colors)
+        print("Mode %d - Civilian Factories" % mode)
+        factories_list = get_civ_factories_list(states_dict)
+        factories_steps = factories_list[-1]
+        lc = generate_legend_and_colors(factories_steps, factories_list, "Civilian Factories in State", mode, "Oranges")
+        colors = lc[0]
+        space = lc[1]
     elif mode == 5:
-        color = get_state_color(state.arms_factory, space, colors)
+        print("Mode %d - Military Factories" % mode)
+        factories_list = get_mil_factories_list(states_dict)
+        factories_steps = factories_list[-1]
+        lc = generate_legend_and_colors(factories_steps, factories_list, "Military Factories in State", mode, "Greens")
+        colors = lc[0]
+        space = lc[1]
     elif mode == 6:
-        color = get_state_color(state.infrastructure, space, colors)
+        print("Mode %d - Infrastructure" % mode)
+        factories_list = get_infra_list(states_dict)
+        factories_steps = factories_list[-1]
+        lc = generate_legend_and_colors(factories_steps, factories_list, "Infrastructure in State", mode, "Oranges")
+        colors = lc[0]
+        space = lc[1]
     elif mode == 7:
-        color = get_state_color(state.dockyard, space, colors)
+        print("Mode %d - Dockyards" % mode)
+        factories_list = get_dockyards_list(states_dict)
+        factories_steps = factories_list[-1]
+        lc = generate_legend_and_colors(factories_steps, factories_list, "Dockyards in State", mode, "Blues")
+        colors = lc[0]
+        space = lc[1]
+    elif mode == 8:
+        print("Mode %d - Industry per capita" % mode)
+        ipc_dict = get_industry_per_capita_per_tag(states_dict)
+        ipc_values = ipc_dict[1]
+        print(ipc_values)
+        ipc_dict = ipc_dict[0]
+        ipc_steps = len(ipc_values)
+        lc = generate_legend_and_colors(ipc_steps, ipc_values, "Factories per 1mil pop", mode, "Oranges")
+        colors = lc[0]
+        space = lc[1]
+    elif mode == 9:
+        print("Mode %d - Industry per capita state" % mode)
+        ipc_list = get_industry_per_capita(states_dict)
+        lc = generate_legend_and_colors(13, ipc_list, "Factories per pop", mode)
+        colors = lc[0]
+        space = lc[1]
+    elif mode == 10:
+        print("Mode %d - Manpower per factory" % mode)
+        ipc_dict = get_manpower_per_factory_per_tag(states_dict)
+        ipc_values = ipc_dict[1]
+        print(ipc_values)
+        ipc_dict = ipc_dict[0]
+        lc = generate_legend_and_colors(12, ipc_values, "Manpower per factory", mode, "Oranges")
+        colors = lc[0]
+        space = lc[1]
     else:
-        color = [round(255 * x) for x in colors.pop()]
+        print("Mode %d - States" % mode)
+        colors = get_colors(args.colors, states_dict)
 
-    #print("STATE %s: COLOR: %s" % (str(state_id), color))
-    for province in state.provinces:
-        colors_replacement_dict[provinces[province]] = ((color[0], color[1], color[2]), state_id)
+    colors_replacement_dict = {}
 
-print("Generating map image...")
-if args.no_ids:
-    create_states_map(colors_replacement_dict, province_map, [round(255 * x) for x in water_color])
-else:
-    create_states_map_with_id(colors_replacement_dict, province_map, [round(255 * x) for x in water_color], args.font)
+    print("Determining state colors...")
+    for state_id, state in tqdm(states_dict.items()):
+        if mode == 1:
+            color = get_state_color(state.manpower/state.pixels, space, colors)
+        elif mode == 2:
+            color = colors[state.owner]
+        elif mode == 3:
+            color = get_state_color(state.industrial_complex+state.arms_factory+state.dockyard, space, colors)
+        elif mode == 4:
+            color = get_state_color(state.industrial_complex, space, colors)
+        elif mode == 5:
+            color = get_state_color(state.arms_factory, space, colors)
+        elif mode == 6:
+            color = get_state_color(state.infrastructure, space, colors)
+        elif mode == 7:
+            color = get_state_color(state.dockyard, space, colors)
+        elif mode == 8 or mode == 10:
+            color = get_state_color(ipc_dict[state_id], space, colors)
+        elif mode == 9:
+            color = get_state_color(state.industrial_complex+state.arms_factory+state.dockyard/state.manpower, space, colors)
+        else:
+            color = [round(255 * x) for x in colors.pop()]
 
-province_map.show()
-print("Saving file " + args.output + "...")
-province_map.save(args.output, "PNG")
+        #print("STATE %s: COLOR: %s" % (str(state_id), color))
+        for province in state.provinces:
+            colors_replacement_dict[provinces[province]] = ((color[0], color[1], color[2]), state_id)
+
+    print("Generating map image...")
+    if args.no_ids:
+        create_states_map(colors_replacement_dict, province_map, [round(255 * x) for x in water_color])
+    else:
+        create_states_map_with_id(colors_replacement_dict, province_map, [round(255 * x) for x in water_color], args.font)
+
+    province_map.show()
+    print("Saving file " + args.output + "...")
+    province_map.save(args.output, "PNG")
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Given valid provinces.bmp, definition.csv files and a folder of state history files (or strategic region files), generate an image containing a map of states with their IDs.')
+    parser.add_argument( 'mode',
+                        help='Mode: 0 - states, 1 - population per pixel, 2 - political, 3 - total factories, 4 - civ factories, 5 - mil factories, 6 - infra, 7 - nav factories, 8 - industry per capita')
+    parser.add_argument('provinces',
+                        help='Path to provinces.bmp file')
+    parser.add_argument( 'definition',
+                        help='Path to definition.csv file')
+    parser.add_argument( 'states',
+                        help='Path to \'history/states\' or \'map/strategicregions\' folder')
+    parser.add_argument( 'output',
+                        help='Name of output file')
+    parser.add_argument('-c', '--colors', required=False, default="hoi4statemapgenerator_colors.pickle",
+                        help='Name of pregenerated colors.pickle file (Default: hoi4statemapgenerator_colors.pickle)')
+    parser.add_argument('-f', '--font', required=False, default="ARIALN.TTF",
+                        help='Name of font to use (Default: ARIALN.TTF)')
+    parser.add_argument( '-nid', '--no_ids', action='store_true', required=False, default=False,
+                        help='Do not put IDs on the map (Default: False)')
+    args = parser.parse_args()
+    main()
