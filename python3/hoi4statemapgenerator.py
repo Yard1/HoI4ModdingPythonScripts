@@ -137,7 +137,7 @@ def load_provinces(name):
 def load_definition(name):
     print("Reading file " + name + "...")
     try:
-        with open(name, "r", encoding='utf-8-sig') as f:
+        with open(name, "r") as f:
             lines = f.read().splitlines()
     except:
         try:
@@ -145,7 +145,7 @@ def load_definition(name):
                 lines = f.read().splitlines()
         except:
             try:
-                with open(name, "r") as f:
+                with open(name, "r", encoding='utf-8-sig') as f:
                     lines = f.read().splitlines()
             except:
                 print("Could not read file " + name + "!")
@@ -161,7 +161,7 @@ def load_state_file(name, states_dict):
     print("Reading file " + name + "...")
     file_str = ""
     try:
-        with open(name, "r", encoding='utf-8-sig') as f:
+        with open(name, "r") as f:
             file_str = f.read()
     except:
         try:
@@ -169,7 +169,7 @@ def load_state_file(name, states_dict):
                 file_str = f.read()
         except:
             try:
-                with open(name, "r") as f:
+                with open(name, "r", encoding='utf-8-sig') as f:
                     file_str = f.read()
             except:
                 print("Could not read file " + name + "!")
@@ -219,7 +219,7 @@ def load_state_file(name, states_dict):
 def load_pdx_colors_file(name):
     print("Reading file " + name + "...")
     try:
-        with open(name, "r", encoding='utf-8-sig') as f:
+        with open(name, "r") as f:
             file_str = f.read()
     except:
         try:
@@ -227,7 +227,7 @@ def load_pdx_colors_file(name):
                 file_str = f.read()
         except:
             try:
-                with open(name, "r") as f:
+                with open(name, "r", encoding='utf-8-sig') as f:
                     file_str = f.read()
             except:
                 print("Could not read file " + name + "!")
@@ -248,11 +248,12 @@ def count_colors(states_dict, provinces_rev, provinces_image):
     statpix = 0
     for i in range(provinces_image.size[0]):
         for j in range(provinces_image.size[1]):
-            totpix += 1
-            provid = provinces_rev[pixels[i, j]]
-            if provid in providstate:
-                statpix += 1
-                providstate[provid].pixels += 1
+            if pixels[i,j] in provinces_rev:
+                totpix += 1
+                provid = provinces_rev[pixels[i, j]]
+                if provid in providstate:
+                    statpix += 1
+                    providstate[provid].pixels += 1
     print(totpix, statpix)
 
 def create_states_map(colors_replacement_dict, provinces_image, water_color):
@@ -578,7 +579,10 @@ def main():
         if mode == 1:
             color = get_state_color(state.manpower/state.pixels, space, colors)
         elif mode == 2:
-            color = colors[state.owner]
+            try:
+                color = colors[state.owner]
+            except:
+                print("%s not in colors" % state.owner)
         elif mode == 3:
             color = get_state_color(state.industrial_complex+state.arms_factory+state.dockyard, space, colors)
         elif mode == 4:
@@ -598,7 +602,8 @@ def main():
 
         #print("STATE %s: COLOR: %s" % (str(state_id), color))
         for province in state.provinces:
-            colors_replacement_dict[provinces[province]] = ((color[0], color[1], color[2]), state_id)
+            if province in provinces:
+                colors_replacement_dict[provinces[province]] = ((color[0], color[1], color[2]), state_id)
 
     print("Generating map image...")
     if args.no_ids:
