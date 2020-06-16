@@ -137,7 +137,7 @@ def load_provinces(name):
 def load_definition(name):
     print("Reading file " + name + "...")
     try:
-        with open(name, "r") as f:
+        with open(name, "r", encoding='utf-8-sig') as f:
             lines = f.read().splitlines()
     except:
         try:
@@ -145,7 +145,7 @@ def load_definition(name):
                 lines = f.read().splitlines()
         except:
             try:
-                with open(name, "r", encoding='utf-8-sig') as f:
+                with open(name, "r") as f:
                     lines = f.read().splitlines()
             except:
                 print("Could not read file " + name + "!")
@@ -161,7 +161,7 @@ def load_state_file(name, states_dict):
     print("Reading file " + name + "...")
     file_str = ""
     try:
-        with open(name, "r") as f:
+        with open(name, "r", encoding='utf-8-sig') as f:
             file_str = f.read()
     except:
         try:
@@ -169,7 +169,7 @@ def load_state_file(name, states_dict):
                 file_str = f.read()
         except:
             try:
-                with open(name, "r", encoding='utf-8-sig') as f:
+                with open(name, "r") as f:
                     file_str = f.read()
             except:
                 print("Could not read file " + name + "!")
@@ -219,7 +219,7 @@ def load_state_file(name, states_dict):
 def load_pdx_colors_file(name):
     print("Reading file " + name + "...")
     try:
-        with open(name, "r") as f:
+        with open(name, "r", encoding='utf-8-sig') as f:
             file_str = f.read()
     except:
         try:
@@ -227,7 +227,7 @@ def load_pdx_colors_file(name):
                 file_str = f.read()
         except:
             try:
-                with open(name, "r", encoding='utf-8-sig') as f:
+                with open(name, "r") as f:
                     file_str = f.read()
             except:
                 print("Could not read file " + name + "!")
