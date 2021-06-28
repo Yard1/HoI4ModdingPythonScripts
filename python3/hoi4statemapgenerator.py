@@ -147,8 +147,9 @@ def load_definition(name):
             try:
                 with open(name, "r", encoding='utf-8-sig') as f:
                     lines = f.read().splitlines()
-            except:
+            except Exception as e:
                 print("Could not read file " + name + "!")
+                print(e)
     provinces = {}
     provinces_rev = {}
     for line in lines:
@@ -171,8 +172,9 @@ def load_state_file(name, states_dict):
             try:
                 with open(name, "r", encoding='utf-8-sig') as f:
                     file_str = f.read()
-            except:
+            except Exception as e:
                 print("Could not read file " + name + "!")
+                print(e)
     if not file_str.strip():
         return
     try:
@@ -289,7 +291,8 @@ def create_states_map_with_id(colors_replacement_dict, provinces_image, water_co
     for key, value in state_pixels.items():
         state_pixels[key] = (value, font.getsize(str(key)))
     print("Generating ID positions...")
-    positions = p_tqdm.p_map(find_id_position, list(state_pixels.items()), size)
+    kvps = list(state_pixels.items())
+    positions = p_tqdm.p_map(find_id_position, kvps, [size]*len(kvps))
     for pos, state in positions:
         draw.text(pos, str(state), fill="black", font=font)
 
@@ -299,7 +302,7 @@ def find_id_position(kvp, size):
     pixels = kvp[1][0]
     font_size = kvp[1][1]
     m = None
-    (X, Y) = size
+    X, Y = size
     m = np.zeros((X, Y))
     for pixel in pixels:
         m[pixel] = 1
